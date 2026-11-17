@@ -67,6 +67,8 @@ flutter:
     - assets/images/software_surfers_player/running/
     - assets/images/software_surfers_player/jumping/
     - assets/images/software_surfers_player/sliding/
+    - assets/images/CS_background.png
+    - assets/images/softwares_background.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
