@@ -27,6 +27,7 @@ class SurferPlayer extends SpriteAnimationComponent with KeyboardHandler {
       : super(
           size: Vector2(100, 140),
           anchor: Anchor.center,
+          priority: 1,
         );
 
   @override
