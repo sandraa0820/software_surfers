@@ -1,16 +1,30 @@
+import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 
-class GameObstacle extends SpriteComponent {
+class GameObstacle extends SpriteComponent with CollisionCallbacks {
   double moveSpeed = 200;
   final int laneIndex;
+  final int obstacleType;
   final Vector2 screenSize;
 
-  GameObstacle({required super.sprite, required this.laneIndex, required this.screenSize})
+  // Tracks whether this obstacle has already been checked for a collision.
+  bool hasBeenChecked = false;
+
+  GameObstacle({required super.sprite, required this.laneIndex, required this.obstacleType,
+                required this.screenSize, required Vector2 obstacleSize,
+                int obstaclePriority = 0})
       : super(
-          size: Vector2.all(50.0),
+          size: obstacleSize,
           anchor: Anchor.center,
-          priority: 0,
+          priority: obstaclePriority,
         );
+  
+  @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+
+    add(RectangleHitbox());
+  }
 
   @override
   void update(double dt) {

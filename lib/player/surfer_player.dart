@@ -1,7 +1,10 @@
+import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/services.dart';
 
-class SurferPlayer extends SpriteAnimationComponent with KeyboardHandler {
+
+class SurferPlayer extends SpriteAnimationComponent with KeyboardHandler, 
+                          CollisionCallbacks {
   // Animations for running, jumping, and sliding
   late SpriteAnimation runAnimation;
   late SpriteAnimation jumpAnimation;
@@ -19,7 +22,7 @@ class SurferPlayer extends SpriteAnimationComponent with KeyboardHandler {
   double gravity = 1000;
   double groundY = 0;
   double verticalVelocity = 0;
-  double slideDuration = 0.5; // Duration of the slide action
+  double slideDuration = 0.8; // Duration of the slide action
   double slideTimer = 0; // Timer to track the slide action duration
   final double jumpSpeed = 500;
 
@@ -33,6 +36,10 @@ class SurferPlayer extends SpriteAnimationComponent with KeyboardHandler {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    add(RectangleHitbox(
+      size: Vector2(50, 70),
+      position: Vector2(25, 60), // Center the hitbox within the component
+    ));
 
     groundY = position.y;
 
@@ -71,7 +78,7 @@ class SurferPlayer extends SpriteAnimationComponent with KeyboardHandler {
 
     slideAnimation = SpriteAnimation.spriteList(
       slideFrames,
-      stepTime: 0.15,
+      stepTime: 0.20,
       loop: false,
     );
   }
@@ -136,4 +143,5 @@ class SurferPlayer extends SpriteAnimationComponent with KeyboardHandler {
       }
     }
   }
+  
 }
