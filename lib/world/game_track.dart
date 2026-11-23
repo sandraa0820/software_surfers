@@ -7,6 +7,12 @@ class GameTrack extends PositionComponent {
   double scrollOffset = 0;
   double scrollSpeed = 200; // Speed at which the track scrolls
 
+  // Responsive track boundaries.
+  double get topLeft => size.x * (size.x < 600 ? 0.38 : 0.43);
+  double get topRight => size.x * (size.x < 600 ? 0.62 : 0.57);
+  double get bottomLeft => size.x * (size.x < 600 ? 0.08 : 0.20);
+  double get bottomRight => size.x * (size.x < 600 ? 0.92 : 0.80);
+
   @override
   void render(Canvas canvas) {
     super.render(canvas);
@@ -14,10 +20,10 @@ class GameTrack extends PositionComponent {
     // Define the path for the game track
     final trackPath = Path();
 
-    trackPath.moveTo(size.x * 0.43, size.y * 0.2); // Top-left corner 
-    trackPath.lineTo(size.x * 0.57, size.y * 0.2); // Top-right corner 
-    trackPath.lineTo(size.x * 0.8, size.y);       // Bottom-right corner
-    trackPath.lineTo(size.x * 0.2, size.y);       // Bottom-left corner
+    trackPath.moveTo(topLeft, size.y * 0.2); // Top-left corner 
+    trackPath.lineTo(topRight, size.y * 0.2); // Top-right corner 
+    trackPath.lineTo(bottomRight, size.y);       // Bottom-right corner
+    trackPath.lineTo(bottomLeft, size.y);       // Bottom-left corner
     trackPath.close();                            // Close the path to form the track shape
 
     final paint = Paint()
@@ -34,8 +40,8 @@ class GameTrack extends PositionComponent {
 
     final leftEdge = Path();
 
-    leftEdge.moveTo(size.x * 0.43, size.y * 0.2);
-    leftEdge.lineTo(size.x * 0.2, size.y);
+    leftEdge.moveTo(topLeft, size.y * 0.2);
+    leftEdge.lineTo(bottomLeft, size.y);
     canvas.drawPath(leftEdge, edgeGlowPaint);
 
     final edgePaint = Paint()
@@ -45,8 +51,8 @@ class GameTrack extends PositionComponent {
     canvas.drawPath(leftEdge, edgePaint);
 
     final rightEdge = Path();
-    rightEdge.moveTo(size.x * 0.57, size.y * 0.2);
-    rightEdge.lineTo(size.x * 0.8, size.y);
+    rightEdge.moveTo(topRight, size.y * 0.2);
+    rightEdge.lineTo(bottomRight, size.y);
     canvas.drawPath(rightEdge, edgeGlowPaint);
     canvas.drawPath(rightEdge, edgePaint);
 
@@ -54,10 +60,10 @@ class GameTrack extends PositionComponent {
     final divider1 = Path();
     final divider2 = Path();
 
-    divider1.moveTo(size.x * (0.43 + 0.14 / 3), size.y * 0.2);
-    divider1.lineTo(size.x * 0.43, size.y);
-    divider2.moveTo(size.x * (0.43 + 0.14 * 2 / 3), size.y * 0.2);
-    divider2.lineTo(size.x * 0.57, size.y); 
+    divider1.moveTo(topLeft + (topRight - topLeft) / 3, size.y * 0.2);
+    divider1.lineTo(bottomLeft + (bottomRight - bottomLeft) / 3, size.y);
+    divider2.moveTo(topLeft + 2 * (topRight - topLeft) / 3, size.y * 0.2);
+    divider2.lineTo(bottomLeft + 2 * (bottomRight - bottomLeft) / 3, size.y); 
 
     final dividerPaint = Paint()
       ..color = const Color(0xFFFFFFFF) 
@@ -74,8 +80,8 @@ class GameTrack extends PositionComponent {
     for (int i = 0; i < 4; i++) {
       final markingY = size.y * 0.2 + (i * spacing + scrollOffset) % trackHeight;
       final trackProgress = (markingY - size.y * 0.2) / trackHeight;
-      final leftX = size.x * (0.43 - 0.23 * trackProgress);
-      final rightX = size.x * (0.57 + 0.23 * trackProgress);
+      final leftX = topLeft + (bottomLeft - topLeft) * trackProgress;
+      final rightX = topRight + (bottomRight - topRight) * trackProgress;
 
       final markingPath = Path();
       markingPath.moveTo(leftX, markingY);

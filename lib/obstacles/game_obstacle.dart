@@ -41,12 +41,21 @@ class GameObstacle extends SpriteComponent with CollisionCallbacks {
 
     scale = Vector2.all(scaleFactor);
 
-    // Calculate road boundaries at its current height.
-    final leftX =
-        screenSize.x * (0.43 - 0.23 * trackProgress);
+    // Use responsive track boundaries.
+    final isPhone = screenSize.x < 600;
 
-    final rightX =
-        screenSize.x * (0.57 + 0.23 * trackProgress);
+    final topLeft = isPhone ? 0.38 : 0.43;
+    final topRight = isPhone ? 0.62 : 0.57;
+
+    final bottomLeft = isPhone ? 0.08 : 0.20;
+    final bottomRight = isPhone ? 0.92 : 0.80;
+
+    // Calculate road boundaries at the obstacle's current height.
+    final leftX = screenSize.x *
+        (topLeft + (bottomLeft - topLeft) * trackProgress);
+
+    final rightX = screenSize.x *
+        (topRight + (bottomRight - topRight) * trackProgress);
 
     // Calculate the width of each lane.
     final laneWidthAtY = (rightX - leftX) / 3;

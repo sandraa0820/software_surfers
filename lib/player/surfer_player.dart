@@ -1,10 +1,11 @@
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flutter/services.dart';
-
+import 'package:flutter/gestures.dart';
 
 class SurferPlayer extends SpriteAnimationComponent with KeyboardHandler, 
-                          CollisionCallbacks {
+                          CollisionCallbacks, DragCallbacks {
   // Animations for running, jumping, and sliding
   late SpriteAnimation runAnimation;
   late SpriteAnimation jumpAnimation;
@@ -144,4 +145,18 @@ class SurferPlayer extends SpriteAnimationComponent with KeyboardHandler,
     }
   }
   
+  // Reset the player's position and movement state for a new game.
+  void resetPlayer() {
+    // Return to the center lane. 
+    position.x += (1 - currentLane) * laneWidth;
+    currentLane = 1;
+
+    // Reset movement state and restore the running animation.
+    position.y = groundY;
+    isJumping = false;
+    isSliding = false;
+    verticalVelocity = 0.0;
+    slideTimer = 0;
+    animation = runAnimation;
+  }
 }

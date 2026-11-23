@@ -2,6 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 
 import 'dart:math';
 
@@ -13,9 +14,11 @@ import 'collectibles/game_collectible.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
-                                  HasCollisionDetection {
+                                  HasCollisionDetection, PanDetector {
                         
   final List<SpawnReservation> spawnReservations = [];
+
+  Vector2 swipeStart = Vector2.zero();
 
   static const double objectMoveSpeed = 200.0;
   static const double extraSpacing = 25.0;
@@ -57,6 +60,33 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
   final ValueNotifier<int> distanceNotifier = ValueNotifier<int>(0);
 
   @override
+  void onPanStart(DragStartInfo info) {
+    swipeStart = info.eventPosition.global.clone();
+  }
+
+  @override
+  void onPanEnd(DragEndInfo info) {
+    final swipeEnd = info.eventPosition.global;
+    final difference = swipeEnd - swipeStart;
+
+    if (difference.length < 30) return;
+
+    if (difference.x.abs() > difference.y.abs()) {
+      if (difference.x > 0) {
+        surferPlayer.moveRight();
+      } else {
+        surferPlayer.moveLeft();
+      }
+    } else {
+      if (difference.y < 0) {
+        surferPlayer.jump();
+      } else {
+        surferPlayer.slide();
+      }
+    }
+  }
+
+  @override
   Future<void> onLoad() async {
     await super.onLoad();
     await loadHighScore();
@@ -76,11 +106,27 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
     add(GameTrack(size: size)..priority = -1);
     //add(ComputerBackground(size: size)..priority = -2);
 
-    // Track width at the player's height
-    final trackWidth = size.x * 0.480; // Width of the track
+    // Calculate the track width at the player's position.
+    final isPhone = size.x < 600;
 
-    // Divide the track into three lanes
-    final laneWidth = trackWidth / 3;
+    // Track boundaries at the player's height (75% of screen).
+    final trackProgress = (0.75 - 0.20) / 0.80;
+
+    final topLeft = isPhone ? 0.38 : 0.43;
+    final topRight = isPhone ? 0.62 : 0.57;
+
+    final bottomLeft = isPhone ? 0.08 : 0.20;
+    final bottomRight = isPhone ? 0.92 : 0.80;
+
+    // Calculate the left and right edges.
+    final leftX = size.x *
+        (topLeft + (bottomLeft - topLeft) * trackProgress);
+
+    final rightX = size.x *
+        (topRight + (bottomRight - topRight) * trackProgress);
+
+    // Divide the track into three equal lanes.
+    final laneWidth = (rightX - leftX) / 3;
 
    surferPlayer = SurferPlayer(laneWidth: laneWidth);
 
@@ -189,8 +235,8 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
       Vector2(68, 72),    // Bug - Jump
       Vector2(65, 70),    // Virus - Jump
       Vector2(90, 70),    // Error - Jump
-      Vector2(115, 164),  // Server block - Change lanes
-      Vector2(170, 175),  // Laser barrier - Slide
+      Vector2(95, 165),  // Server block - Change lanes
+      Vector2(95, 140),  // Laser barrier - Slide
     ];
 
     final selectedSize = obstacleSizes[obstaclesIndex];
@@ -235,12 +281,21 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
     final trackProgress =
         (obstacleY - size.y * 0.2) / (size.y * 0.8);
 
-    // Calculate the road boundaries.
-    final leftX =
-        size.x * (0.43 - 0.23 * trackProgress);
+    // Use the same track boundaries as GameTrack.
+    final isPhone = size.x < 600;
 
-    final rightX =
-        size.x * (0.57 + 0.23 * trackProgress);
+    final topLeft = isPhone ? 0.38 : 0.43;
+    final topRight = isPhone ? 0.62 : 0.57;
+
+    final bottomLeft = isPhone ? 0.08 : 0.20;
+    final bottomRight = isPhone ? 0.92 : 0.80;
+
+    // Calculate the road boundaries at this obstacle's position.
+    final leftX = size.x *
+        (topLeft + (bottomLeft - topLeft) * trackProgress);
+
+    final rightX = size.x *
+        (topRight + (bottomRight - topRight) * trackProgress);
 
     // Divide the track into three lanes.
     final laneWidthAtY = (rightX - leftX) / 3;
@@ -333,6 +388,29 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
     }
   }
 
+  // Calculate the center of a lane at a specific height.
+  double laneCenterAtY(int laneIndex, double y) {
+    final isPhone = size.x < 600;
+
+    final topLeft = isPhone ? 0.38 : 0.43;
+    final topRight = isPhone ? 0.62 : 0.57;
+    final bottomLeft = isPhone ? 0.08 : 0.20;
+    final bottomRight = isPhone ? 0.92 : 0.80;
+
+    final trackProgress =
+        (y - size.y * 0.2) / (size.y * 0.8);
+
+    final leftX = size.x *
+        (topLeft + (bottomLeft - topLeft) * trackProgress);
+
+    final rightX = size.x *
+        (topRight + (bottomRight - topRight) * trackProgress);
+
+    final laneWidthAtY = (rightX - leftX) / 3;
+
+    return leftX + laneWidthAtY * (laneIndex + 0.5);
+  }
+
   void spawnDataByte() {
     // Check the full four-Data-Byte trail.
     final availableLanes = <int>[];
@@ -375,22 +453,10 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
       // Space the Data Bytes along the track.
       final collectibleY = size.y * 0.17 + (i * 58.0);
 
-      // Calculate perspective.
-      final trackProgress =
-          (collectibleY - size.y * 0.2) / (size.y * 0.8);
-
-      final leftX =
-          size.x * (0.43 - 0.23 * trackProgress);
-
-      final rightX =
-          size.x * (0.57 + 0.23 * trackProgress);
-
-      final laneWidthAtY = (rightX - leftX) / 3;
-
-      final laneCenterX =
-          leftX + laneWidthAtY * (laneIndex + 0.5);
-
-      dataByte.position = Vector2(laneCenterX, collectibleY);
+      dataByte.position = Vector2(
+        laneCenterAtY(laneIndex, collectibleY),
+        collectibleY,
+      );
 
     spawnReservations.add(
       SpawnReservation(
@@ -439,18 +505,10 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
     // Make the Bonus Chip slightly bigger.
     bonusChip.size = Vector2(80, 80);
 
-    // Calculate its position on the perspective track.
-    final trackProgress =
-        (bonusChipY - size.y * 0.2) / (size.y * 0.8);
-
-    final leftX = size.x * (0.43 - 0.23 * trackProgress);
-    final rightX = size.x * (0.57 + 0.23 * trackProgress);
-    final laneWidthAtY = (rightX - leftX) / 3;
-
-    final laneCenterX =
-        leftX + laneWidthAtY * (laneIndex + 0.5);
-
-    bonusChip.position = Vector2(laneCenterX, bonusChipY);
+    bonusChip.position = Vector2(
+      laneCenterAtY(laneIndex, bonusChipY),
+      bonusChipY,
+    );
 
     // Reserve its position to prevent unwanted overlaps.
     spawnReservations.add(
@@ -512,6 +570,52 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('highScore', highScore);
     }
+  }
+
+  Future<void> restartGame() async {
+    // Remove the Game Over overlay.
+    overlays.remove('GameOver');
+
+    // Reset the score and collected Data Bytes.
+    health = 2;
+    score = 0;
+    dataBytesCollected = 0;
+    distance = 0;
+    gameTime = 0;
+
+    // Reset spawning timers.
+    spawnTimer = 0;
+    collectibleTimer = 0;
+    bonusChipTimer = 0;
+
+    spawnReservations.clear();
+
+    for (int i = 0; i < laneSafeUntil.length; i++) {
+      laneSafeUntil[i] = 0.0;
+    }
+
+    // Remove remaining obstacles and collectibles.
+    final oldObjects = children.where((component) =>
+        component is GameObstacle || 
+        component is GameCollectible).toList();
+
+    for (final object in oldObjects) {
+      object.removeFromParent();
+    }
+
+    // Reset the player's position and movement state.
+    surferPlayer.resetPlayer();
+
+    // Reset the score and distance displays.
+    scoreNotifier.value = 0;
+    distanceNotifier.value = 0;
+
+    // Update the HUD to restore the health.
+    overlays.remove('Hud');
+    overlays.add('Hud');
+
+    // Resume Gameplay.
+    resumeEngine();
   }
 
 }
