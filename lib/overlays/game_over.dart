@@ -101,6 +101,95 @@ class GameOver extends StatelessWidget {
                   ],
                 ),
               ),
+              // Space between statistics and the button.
+              const SizedBox(height: 25),
+
+              // Run Again button.
+              Container(
+                width: 280,
+                height: 55,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x887C3AED),
+                      blurRadius: 18,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    game.restartGame();
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text(
+                    'RUN AGAIN',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF7025C9),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(
+                        color: Color(0xFFC59BFF),
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 15),
+
+              // Main Menu button.
+              Container(
+                width: 280,
+                height: 55,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x66FF1493),
+                      blurRadius: 18,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    game.overlays.remove('GameOver');
+                    game.overlays.add('MainMenu');
+                  },
+                  icon: const Icon(Icons.home),
+                  label: const Text(
+                    'MAIN MENU',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10152F),
+                    foregroundColor: const Color(0xFFFF69C8),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(
+                        color: Color(0xFFFF69C8),
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

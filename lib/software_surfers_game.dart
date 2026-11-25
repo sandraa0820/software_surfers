@@ -2,7 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
+import 'package:flame/events.dart';
 
 import 'dart:math';
 
@@ -18,7 +18,8 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
                         
   final List<SpawnReservation> spawnReservations = [];
 
-  Vector2 swipeStart = Vector2.zero();
+  Vector2 swipeDistance = Vector2.zero();
+  bool swipeHandled = false;
 
   static const double objectMoveSpeed = 200.0;
   static const double extraSpacing = 25.0;
@@ -61,29 +62,45 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
 
   @override
   void onPanStart(DragStartInfo info) {
-    swipeStart = info.eventPosition.global.clone();
+    swipeDistance = Vector2.zero();
+    swipeHandled = false;
+  }
+
+  @override
+  void onPanUpdate(DragUpdateInfo info) {
+    if (swipeHandled || health <= 0) return;
+
+    swipeDistance += info.delta.global;
+
+    // Minimum distance required to detect a swipe.
+    if (swipeDistance.length < 15) return;
+
+    if (swipeDistance.x.abs() > swipeDistance.y.abs()) {
+      if (swipeDistance.x > 0) {
+        surferPlayer.moveRight();
+        debugPrint('Swipe RIGHT detected');
+      } else {
+        surferPlayer.moveLeft();
+        debugPrint('Swipe LEFT detected');
+      }
+    } else {
+      if (swipeDistance.y < 0) {
+        surferPlayer.jump();
+        debugPrint('Swipe UP detected');
+      } else {
+        surferPlayer.slide();
+        debugPrint('Swipe DOWN detected');
+      }
+    }
+
+    // Prevent multiple actions from a single swipe.
+    swipeHandled = true;
   }
 
   @override
   void onPanEnd(DragEndInfo info) {
-    final swipeEnd = info.eventPosition.global;
-    final difference = swipeEnd - swipeStart;
-
-    if (difference.length < 30) return;
-
-    if (difference.x.abs() > difference.y.abs()) {
-      if (difference.x > 0) {
-        surferPlayer.moveRight();
-      } else {
-        surferPlayer.moveLeft();
-      }
-    } else {
-      if (difference.y < 0) {
-        surferPlayer.jump();
-      } else {
-        surferPlayer.slide();
-      }
-    }
+    swipeDistance = Vector2.zero();
+    swipeHandled = false;
   }
 
   @override
@@ -145,6 +162,8 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
       await loadSprite('obstacles/barrier.png')
       
     ];
+
+    pauseEngine();
   }
 
   @override
@@ -202,12 +221,16 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
     required double y,
     required double halfHeight,
     bool isLaser = false,
+    bool isCollectible = false,
   }) {
     for (final reservation in spawnReservations) {
       if (reservation.lane != lane) continue;
 
-      // Laser barriers are allowed to share a lane with Data Bytes.
-      if (isLaser || reservation.isLaser) continue;
+      // Allow Laser Barriers to overlap only with collectibles.
+      if ((isLaser && reservation.isCollectible) ||
+          (isCollectible && reservation.isLaser)) {
+        continue;
+      }
 
       // Calculate where the existing object should be now.
       final existingY = reservation.startY +
@@ -224,7 +247,7 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
 
     return true;
   }
-  
+
   void spawnObstacle() {
     // Randomly choose an obstacle.
     final obstaclesIndex = random.nextInt(obstacleSprites.length);
@@ -232,11 +255,11 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
 
     // Assign a size based on the selected obstacle.
     final obstacleSizes = [
-      Vector2(68, 72),    // Bug - Jump
+      Vector2(67, 72),    // Bug - Jump
       Vector2(65, 70),    // Virus - Jump
-      Vector2(90, 70),    // Error - Jump
-      Vector2(95, 165),  // Server block - Change lanes
-      Vector2(95, 140),  // Laser barrier - Slide
+      Vector2(66, 70),    // Error - Jump
+      Vector2(66, 165),  // Server block - Change lanes
+      Vector2(125, 173),  // Laser barrier - Slide
     ];
 
     final selectedSize = obstacleSizes[obstaclesIndex];
@@ -258,14 +281,24 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
       }
     }
 
-    // Skip spawning if all lanes are occupied.
+    // Check if the selected obstacle is a Laser Barrier.
+    final isLaser = obstaclesIndex == 4;
+
+    // Skip spawning if no lanes are available.
     if (availableLanes.isEmpty) {
       return;
     }
 
-    // Choose a safe lane BEFORE creating the obstacle.
-    final laneIndex =
-        availableLanes[random.nextInt(availableLanes.length)];
+    // Laser Barriers require all three lanes to be available.
+    if (isLaser && availableLanes.length != 3) {
+      return;
+    }
+
+    // Center the Laser Barrier in the middle lane.
+    // Other obstacles continue to use a random available lane.
+    final laneIndex = isLaser
+        ? 1
+        : availableLanes[random.nextInt(availableLanes.length)];
 
     // Create the obstacle.
     final obstacle = GameObstacle(
@@ -307,16 +340,23 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
     // Position the obstacle.
     obstacle.position = Vector2(laneCenterX, obstacleY);
 
-    // Register the obstacle immediately.
-    spawnReservations.add(
-      SpawnReservation(
-        lane: laneIndex,
-        startY: obstacleY,
-        halfHeight: selectedSize.y * 0.6,
-        spawnTime: gameTime,
-        isLaser: obstaclesIndex == 4,
-      ),
-    );
+    /// Determine which lanes need to be reserved.
+    final reservedLanes = isLaser
+        ? [0, 1, 2]
+        : [laneIndex];
+
+    // Register the obstacle in the required lanes.
+    for (final lane in reservedLanes) {
+      spawnReservations.add(
+        SpawnReservation(
+          lane: lane,
+          startY: obstacleY,
+          halfHeight: selectedSize.y * 0.6,
+          spawnTime: gameTime,
+          isLaser: isLaser,
+        ),
+      );
+    }
 
     // Add the obstacle to the game.
     add(obstacle);
@@ -336,8 +376,10 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
       if (obstacle.position.y >= surferPlayer.groundY) {
         obstacle.hasBeenChecked = true;
 
-        // The player is safe if they are in a different lane.
-        if (obstacle.laneIndex != surferPlayer.currentLane) {
+        // Regular obstacles can be avoided by switching lanes.
+        // Laser Barriers cover all three lanes.
+        if (obstacle.obstacleType != 4 &&
+            obstacle.laneIndex != surferPlayer.currentLane) {
           continue;
         }
 
@@ -425,6 +467,7 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
           lane: lane,
           y: collectibleY,
           halfHeight: 40.0,
+          isCollectible: true,
         )) {
           safe = false;
           break;
@@ -464,6 +507,7 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
         startY: collectibleY,
         halfHeight: 40.0,
         spawnTime: gameTime,
+        isCollectible: true,
       ),
     );
 
@@ -483,6 +527,7 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
         lane: lane,
         y: bonusChipY,
         halfHeight: bonusChipHalfHeight,
+        isCollectible: true,
       )) {
         availableLanes.add(lane);
       }
@@ -517,6 +562,7 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
         startY: bonusChipY,
         halfHeight: bonusChipHalfHeight,
         spawnTime: gameTime,
+        isCollectible: true,
       ),
     );
 
@@ -626,6 +672,7 @@ class SpawnReservation {
   final double halfHeight;
   final double spawnTime;
   final bool isLaser;
+  final bool isCollectible;
 
   SpawnReservation({
     required this.lane,
@@ -633,5 +680,7 @@ class SpawnReservation {
     required this.halfHeight,
     required this.spawnTime,
     this.isLaser = false,
+    this.isCollectible = false,
   });
+
 }

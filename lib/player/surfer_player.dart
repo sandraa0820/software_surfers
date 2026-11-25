@@ -1,11 +1,9 @@
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
-import 'package:flame/events.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/gestures.dart';
 
 class SurferPlayer extends SpriteAnimationComponent with KeyboardHandler, 
-                          CollisionCallbacks, DragCallbacks {
+                          CollisionCallbacks {
   // Animations for running, jumping, and sliding
   late SpriteAnimation runAnimation;
   late SpriteAnimation jumpAnimation;
@@ -84,34 +82,50 @@ class SurferPlayer extends SpriteAnimationComponent with KeyboardHandler,
     );
   }
   
+  // Move the player one lane to the right.
+  void moveRight() {
+    if (currentLane < 2) {
+      currentLane++;
+      position.x += laneWidth;
+    }
+  }
+
+  // Move the player one lane to the left.
+  void moveLeft() {
+    if (currentLane > 0) {
+      currentLane--;
+      position.x -= laneWidth;
+    }
+  }
+
+  // Make the player jump.
+  void jump() {
+    if (!isJumping && !isSliding) {
+      isJumping = true;
+      verticalVelocity = -jumpSpeed;
+      animation = jumpAnimation;
+    }
+  }
+
+  // Make the player slide.
+  void slide() {
+    if (!isSliding && !isJumping) {
+      isSliding = true;
+      animation = slideAnimation;
+    }
+  }
 
   @override
   bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
     if (event is KeyDownEvent) {
-      // Move right
       if (keysPressed.contains(LogicalKeyboardKey.arrowRight)) {
-        if (currentLane < 2) {
-          currentLane++;
-          position.x += laneWidth;
-        }
-        // Move left
+        moveRight();
       } else if (keysPressed.contains(LogicalKeyboardKey.arrowLeft)) {
-        if (currentLane > 0) {
-          currentLane--;
-          position.x -= laneWidth;
-        }
-        // Move up (jump)
+        moveLeft();
       } else if (keysPressed.contains(LogicalKeyboardKey.arrowUp)) {
-        if (!isJumping && !isSliding) {
-          isJumping = true;
-          verticalVelocity = -jumpSpeed;
-          animation = jumpAnimation;
-        }
+        jump();
       } else if (keysPressed.contains(LogicalKeyboardKey.arrowDown)) {
-        if(!isSliding && !isJumping) {
-          isSliding = true;
-          animation = slideAnimation;
-        }
+        slide();
       }
     }
     return true;

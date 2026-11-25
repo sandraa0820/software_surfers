@@ -57,12 +57,40 @@ class GameObstacle extends SpriteComponent with CollisionCallbacks {
     final rightX = screenSize.x *
         (topRight + (bottomRight - topRight) * trackProgress);
 
-    // Calculate the width of each lane.
-    final laneWidthAtY = (rightX - leftX) / 3;
+    // Calculate the width of the entire track.
+    final trackWidthAtY = rightX - leftX;
 
-    // Keep the obstacle centered in its assigned lane.
-    position.x =
-        leftX + laneWidthAtY * (laneIndex + 0.5);
+    // Calculate the width of each lane.
+    final laneWidthAtY = trackWidthAtY / 3;
+
+    if (obstacleType == 4) {
+      // Calculate the bottom of the Laser Barrier.
+      final baseY = position.y + (size.y * scale.y / 2);
+
+      // Calculate the track progress at the base.
+      final baseProgress =
+          (baseY - screenSize.y * 0.2) / (screenSize.y * 0.8);
+
+      // Calculate the track edges at the base of the barrier.
+      final baseLeftX = screenSize.x *
+          (topLeft + (bottomLeft - topLeft) * baseProgress);
+
+      final baseRightX = screenSize.x *
+          (topRight + (bottomRight - topRight) * baseProgress);
+
+      // Calculate the full width at the base.
+      final baseTrackWidth = baseRightX - baseLeftX;
+
+      // Center the Laser Barrier.
+      position.x = (baseLeftX + baseRightX) / 2;
+
+      // Align the support pillars with the track edges.
+      scale.x = (baseTrackWidth * 1.15) / size.x;
+    } else {
+      // Keep regular obstacles centered in their assigned lane.
+      position.x =
+          leftX + laneWidthAtY * (laneIndex + 0.5);
+    }
     
     // Remove the obstacle if it goes off the bottom of the screen.
     if (position.y > screenSize.y + size.y / 2) {

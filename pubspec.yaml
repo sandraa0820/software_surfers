@@ -73,6 +73,7 @@ flutter:
     - assets/images/obstacles/
     - assets/images/collectibles/
     - assets/images/game_over.png
+    - assets/images/menus/
 
 
   # An image asset can refer to one or more resolution-specific "variants", see
