@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   flame: ^1.38.2
   shared_preferences: ^2.5.6
+  flutter_soloud: ^5.3.2
 
 dev_dependencies:
   flutter_test:
@@ -74,6 +75,9 @@ flutter:
     - assets/images/collectibles/
     - assets/images/game_over.png
     - assets/images/menus/
+    - assets/audio/intro.mp3
+    - assets/audio/gameplay.mp3
+    - assets/audio/game_over.mp3
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../main.dart'; // MusicManager
 import '../software_surfers_game.dart';
 
 class Settings extends StatefulWidget {
@@ -12,7 +12,7 @@ class Settings extends StatefulWidget {
 }
 
 class _SettingsState extends State<Settings> {
-  bool musicEnabled = true;
+  bool musicEnabled = MusicManager.instance.musicEnabled;
   bool soundEffectsEnabled = true;
   double masterVolume = 1.0;
 
@@ -123,6 +123,7 @@ class _SettingsState extends State<Settings> {
               setState(() {
                 musicEnabled = value;
               });
+              MusicManager.instance.setMusicEnabled(value);
             },
           ),
 

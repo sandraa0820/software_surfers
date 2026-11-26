@@ -3,7 +3,7 @@ import 'package:flame/game.dart';
 import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
 import 'package:flame/events.dart';
-
+import 'main.dart';
 import 'dart:math';
 
 import 'world/game_track.dart';
@@ -421,7 +421,7 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
 
     if (health == 0) {
       pauseEngine();
-
+      MusicManager.instance.play(MusicTrack.gameOver);
       // Update the high score when the game ends.
       updateHighScore();
 
@@ -662,6 +662,12 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
 
     // Resume Gameplay.
     resumeEngine();
+  }
+
+  @override
+  void resumeEngine() {
+    super.resumeEngine();
+    MusicManager.instance.play(MusicTrack.gameplay);
   }
 
 }
