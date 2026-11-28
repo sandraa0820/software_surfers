@@ -1,6 +1,8 @@
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
 import 'package:flutter/services.dart';
+
 
 class SurferPlayer extends SpriteAnimationComponent with KeyboardHandler, 
                           CollisionCallbacks {
@@ -16,6 +18,7 @@ class SurferPlayer extends SpriteAnimationComponent with KeyboardHandler,
   final double laneWidth;
 
   // variables for jumping and gravity
+  bool isFlashing = false;
   bool isJumping = false;
   bool isSliding = false;
   double gravity = 1000;
@@ -173,4 +176,25 @@ class SurferPlayer extends SpriteAnimationComponent with KeyboardHandler,
     slideTimer = 0;
     animation = runAnimation;
   }
+
+  // Make the player flash when hit.
+  void flashDamage() {
+     if(isFlashing) return;
+
+     isFlashing = true;
+
+      add(
+        OpacityEffect.to(
+          0.3,
+          EffectController(
+            alternate: true,
+            duration: 0.1,
+            repeatCount: 5,
+          ),
+        )..onComplete = () {
+          opacity = 1.0;
+          isFlashing = false;
+        },
+      );
+    }
 }

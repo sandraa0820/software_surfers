@@ -415,6 +415,11 @@ class SoftwareSurfersGame extends FlameGame with HasKeyboardHandlerComponents,
 
     health--;
 
+    // Flash the player to indicate damage.
+    if (health > 0) {
+      surferPlayer.flashDamage();
+    }
+
     // Refresh the HUD to display the updated health.
     overlays.remove('Hud');
     overlays.add('Hud');

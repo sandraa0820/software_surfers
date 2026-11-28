@@ -12,9 +12,9 @@ class GameHud extends StatelessWidget {
     return IgnorePointer(
       child: Stack(
         children: [
-        // Neon pink hearts.
+        // Neon pink hearts. (health)
           Positioned(
-            top: 20,
+            top: 33,
             left: 20,
             child: Row(
               children: List.generate(2, (index) {
@@ -48,7 +48,7 @@ class GameHud extends StatelessWidget {
 
           // Distance counter.
           Positioned(
-            top: 20,
+            top: 33,
             right: 20,
             child: ValueListenableBuilder<int>(
               valueListenable: game.distanceNotifier,
@@ -84,7 +84,7 @@ class GameHud extends StatelessWidget {
 
           // Data Byte score counter.
           Positioned(
-            top: 58,
+            top: 66,
             right: 20,
             child: ValueListenableBuilder<int>(
               valueListenable: game.scoreNotifier,
